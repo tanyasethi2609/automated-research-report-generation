@@ -10,8 +10,12 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.messages import get_buffer_string
 from langchain_community.tools.tavily_search import TavilySearchResults
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+sys.path.append(project_root)
+
 from docx import Document
-from reportlab.lib import letter 
+from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 from research_and_analyst.schemas.models import (
@@ -24,12 +28,8 @@ from research_and_analyst.schemas.models import (
 )
 
 from research_and_analyst.utils.model_loader import ModelLoader
-from research_and_analyst.prompt_lib.prompt_locator import (
-    ANALYST_ASK_QUESTIONS,
-    GENERATE_SEARCH_QUERY,
-    GENERATE_ANSWERS,
-    WRITE_SECTION,
-)
+from research_and_analyst.workflows.interview_workflow import InterviewGraphBuilder
+from research_and_analyst.prompt_lib.prompt_locator import *
 from research_and_analyst.logger import GLOBAL_LOGGER
 from research_and_analyst.exception.custom_exception import ResearchAnalystException
  
@@ -358,35 +358,36 @@ class AutonomousReportGenerator:
 
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
-    try:
+    # try:
         llm = ModelLoader().load_llm()
+        print(llm.invoke("hello").content)  # Test LLM connectivity
         reporter = AutonomousReportGenerator(llm)
         graph = reporter.build_graph()
 
-        topic = "Impact of LLMs over the Future of Jobs?"
-        thread = {"configurable": {"thread_id": "1"}}
-        reporter.logger.info("Starting report generation pipeline", topic=topic)
+    #     topic = "Impact of LLMs over the Future of Jobs?"
+    #     thread = {"configurable": {"thread_id": "1"}}
+    #     reporter.logger.info("Starting report generation pipeline", topic=topic)
 
-        for _ in graph.stream({"topic": topic, "max_analysts": 3}, thread, stream_mode="values"):
-            pass
+    #     for _ in graph.stream({"topic": topic, "max_analysts": 3}, thread, stream_mode="values"):
+    #         pass
 
-        state = graph.get_state(thread)
-        feedback = input("\n Enter your feedback or press Enter to continue: ").strip()
-        graph.update_state(thread, {"human_analyst_feedback": feedback}, as_node="human_feedback")
+    #     state = graph.get_state(thread)
+    #     feedback = input("\n Enter your feedback or press Enter to continue: ").strip()
+    #     graph.update_state(thread, {"human_analyst_feedback": feedback}, as_node="human_feedback")
 
-        for _ in graph.stream(None, thread, stream_mode="values"):
-            pass
+    #     for _ in graph.stream(None, thread, stream_mode="values"):
+    #         pass
 
-        final_state = graph.get_state(thread)
-        final_report = final_state.values.get("final_report")
+    #     final_state = graph.get_state(thread)
+    #     final_report = final_state.values.get("final_report")
 
-        if final_report:
-            reporter.logger.info("Report generated successfully")
-            reporter.save_report(final_report, topic, "docx")
-            reporter.save_report(final_report, topic, "pdf")
-        else:
-            reporter.logger.error("No report content generated")
+    #     if final_report:
+    #         reporter.logger.info("Report generated successfully")
+    #         reporter.save_report(final_report, topic, "docx")
+    #         reporter.save_report(final_report, topic, "pdf")
+    #     else:
+    #         reporter.logger.error("No report content generated")
 
-    except Exception as e:
-        GLOBAL_LOGGER.error("Fatal error in main execution", error=str(e))
-        raise ResearchAnalystException("Autonomous report generation pipeline failed", e)
+    # except Exception as e:
+    #     GLOBAL_LOGGER.error("Fatal error in main execution", error=str(e))
+    #     raise ResearchAnalystException("Autonomous report generation pipeline failed", e)
